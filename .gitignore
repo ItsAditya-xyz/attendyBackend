@@ -1,0 +1,16 @@
+.DS_Store
+.vscode
+pyvenv.cfg
+.env
+.ebextensions
+.zip
+__pycache__/
+venv/
+cordify.zip
+cordifyKeyPair.pem
+CordifyWebAppKeyPair.pem
+test.json
+test.py
+test2.py
+/test
+build.zip
