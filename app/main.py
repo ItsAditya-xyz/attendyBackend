@@ -43,15 +43,69 @@ def index():
 # APIs for AttendyApp
 
 application.add_url_rule(
-    '/attendy-login', view_func=attendy.login, methods=['POST'], defaults={'jsonify': jsonify, 'MYSQL': mysql, 'request': request, 'FIREBASE': firebase_auth})
+    "/attendy-login",
+    view_func=attendy.login,
+    methods=["POST"],
+    defaults={
+        "jsonify": jsonify,
+        "MYSQL": mysql,
+        "request": request,
+        "FIREBASE": firebase_auth,
+    },
+)
 
 application.add_url_rule(
-    '/attendy-signup', view_func=attendy.signUp, methods=['POST'], defaults={'jsonify': jsonify, 'MYSQL': mysql, 'request': request, 'FIREBASE': firebase_auth})
+    "/attendy-signup",
+    view_func=attendy.signUp,
+    methods=["POST"],
+    defaults={
+        "jsonify": jsonify,
+        "MYSQL": mysql,
+        "request": request,
+        "FIREBASE": firebase_auth,
+    },
+)
 
 application.add_url_rule(
-    '/add-student', view_func=attendy.add_student, methods=['POST'], defaults={'jsonify': jsonify, 'FIREBASE': firebase_auth, 'request': request})
+    "/add-student",
+    view_func=attendy.add_student,
+    methods=["POST"],
+    defaults={"jsonify": jsonify, "FIREBASE": firebase_auth, "request": request},
+)
 
 application.add_url_rule(
-    '/get-details', view_func=attendy.get_details, methods=['POST'], defaults={'jsonify': jsonify, 'FIREBASE': firebase_auth, 'request': request})
+    "/get-details",
+    view_func=attendy.get_details,
+    methods=["POST"],
+    defaults={"jsonify": jsonify, "FIREBASE": firebase_auth, "request": request},
+)
+
+application.add_url_rule(
+    "/mark-attendance",
+    view_func=attendy.mark_attendance,
+    methods=["POST"],
+    defaults={"jsonify": jsonify, "FIREBASE": firebase_auth, "request": request},
+)
+
+application.add_url_rule(
+    "/get-attendance",
+    view_func=attendy.get_attendance,
+    methods=["POST"],
+    defaults={"jsonify": jsonify, "FIREBASE": firebase_auth, "request": request},
+)
+
+application.add_url_rule(
+    "/delete-class",
+    view_func=attendy.delete_class,
+    methods=["POST"],
+    defaults={"jsonify": jsonify, "FIREBASE": firebase_auth, "request": request},
+)
+
+application.add_url_rule(
+    "/delete-student",
+    view_func=attendy.delete_student,
+    methods=["POST"],
+    defaults={"jsonify": jsonify, "FIREBASE": firebase_auth, "request": request},
+)
 
 

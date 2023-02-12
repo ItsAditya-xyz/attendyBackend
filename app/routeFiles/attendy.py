@@ -1,7 +1,15 @@
 import requests
+from app.function import (
+    encrypt_message,
+    decrypt_message,
+    getDiamondsForPosts,
+    getPosterPublicKey,
+)
 import json
 import re
 import pyrebase
+from datetime import datetime
+from pytz import timezone
 
 
 def signUp(request, jsonify, MYSQL, FIREBASE):
@@ -155,9 +163,7 @@ def add_student(request, jsonify, FIREBASE):
             }
         )
 
-        return jsonify(
-            {"status": "success", "message": "Successfully added student"}
-        )
+        return jsonify({"status": "success", "message": "Successfully added student"})
 
     except Exception as e:
         print(e)
@@ -197,24 +203,185 @@ def get_details(request, jsonify, FIREBASE):
         }
     )
 
-# def delete_student(request, jsonify, FIREBASE):
-#     data = request.get_json()
-#     admin_email = data["admin_email"]
-#     admin_password = data["admin_password"]
 
-#     class_name = data["class_name"]
-#     student_roll = data["student_roll"]
+def delete_student(request, jsonify, FIREBASE):
+    data = request.get_json()
+    admin_email = data["admin_email"]
+    admin_password = data["admin_password"]
 
-#     admin_email = admin_email.replace("@", "_AT").replace(".", "_")
+    class_name = data["class_name"]
+    student_roll = data["student_roll"]
 
-#     firebaseConfig = {
-#         "apiKey": FIREBASE["apiKey"],
-#         "authDomain": FIREBASE["authDomain"],
-#         "projectId": FIREBASE["projectId"],
-#         "storageBucket": FIREBASE["storageBucket"],
-#         "messagingSenderId": FIREBASE["messagingSenderId"],
-#         "appId": FIREBASE["appId"],
-#         "databaseURL": FIREBASE["databaseURL"],
-#     }
+    admin_email = admin_email.replace("@", "_AT").replace(".", "_")
+
+    firebaseConfig = {
+        "apiKey": FIREBASE["apiKey"],
+        "authDomain": FIREBASE["authDomain"],
+        "projectId": FIREBASE["projectId"],
+        "storageBucket": FIREBASE["storageBucket"],
+        "messagingSenderId": FIREBASE["messagingSenderId"],
+        "appId": FIREBASE["appId"],
+        "databaseURL": FIREBASE["databaseURL"],
+    }
+
+    firebase = pyrebase.initialize_app(firebaseConfig)
+    db = firebase.database()
+
+    admin_data = db.child("attendyAccount").child(admin_email).get().val()
+    if admin_data == None:
+        return jsonify({"status": "failed", "message": "Admin does not exist"})
+    if admin_data["passwordVal"] != admin_password:
+        return jsonify({"status": "failed", "message": "Password is incorrect"})
+
+    db.child(admin_email).child("classes").child(class_name).child(
+        student_roll
+    ).remove()
 
 
+def delete_class(request, jsonify, FIREBASE):
+    data = request.get_json()
+    admin_email = data["admin_email"]
+    admin_password = data["admin_password"]
+
+    class_name = data["class_name"]
+
+    admin_email = admin_email.replace("@", "_AT").replace(".", "_")
+
+    firebaseConfig = {
+        "apiKey": FIREBASE["apiKey"],
+        "authDomain": FIREBASE["authDomain"],
+        "projectId": FIREBASE["projectId"],
+        "storageBucket": FIREBASE["storageBucket"],
+        "messagingSenderId": FIREBASE["messagingSenderId"],
+        "appId": FIREBASE["appId"],
+        "databaseURL": FIREBASE["databaseURL"],
+    }
+
+    firebase = pyrebase.initialize_app(firebaseConfig)
+    db = firebase.database()
+
+    admin_data = db.child("attendyAccount").child(admin_email).get().val()
+    if admin_data == None:
+        return jsonify({"status": "failed", "message": "Admin does not exist"})
+    if admin_data["passwordVal"] != admin_password:
+        return jsonify({"status": "failed", "message": "Password is incorrect"})
+
+    db.child(admin_email).child("classes").child(class_name).remove()
+
+
+def mark_attendance(request, jsonify, FIREBASE):
+    data = request.get_json()
+    admin_email = data["admin_email"]
+    admin_password = data["admin_password"]
+
+    class_name = data["class_name"]
+    student_roll = data["student_roll"]
+    is_present = data["is_present"] in ("true", "True", "TRUE", "1", 1, True)
+
+    admin_email = admin_email.replace("@", "_AT").replace(".", "_")
+    date = datetime.now(timezone("Asia/Kolkata")).strftime("%d_%m_%Y")
+    hour = datetime.now(timezone("Asia/Kolkata")).strftime("%I%p")
+
+    firebaseConfig = {
+        "apiKey": FIREBASE["apiKey"],
+        "authDomain": FIREBASE["authDomain"],
+        "projectId": FIREBASE["projectId"],
+        "storageBucket": FIREBASE["storageBucket"],
+        "messagingSenderId": FIREBASE["messagingSenderId"],
+        "appId": FIREBASE["appId"],
+        "databaseURL": FIREBASE["databaseURL"],
+    }
+
+    firebase = pyrebase.initialize_app(firebaseConfig)
+    db = firebase.database()
+
+    admin_data = db.child("attendyAccount").child(admin_email).get().val()
+    if admin_data == None:
+        return jsonify({"status": "failed", "message": "Admin does not exist"})
+    if admin_data["passwordVal"] != admin_password:
+        return jsonify({"status": "failed", "message": "Password is incorrect"})
+
+    student_name = (
+        db.child(admin_email)
+        .child("classes")
+        .child(class_name)
+        .child(student_roll)
+        .child("name")
+        .get()
+        .val()
+    )
+
+    db.child("attendances").child(date).child(hour).child(admin_email).child(
+        class_name
+    ).child(student_roll).set(
+        {
+            "present": is_present,
+            "name": student_name,
+            "markTime": datetime.now(timezone("Asia/Kolkata")).strftime("%H:%M:%S"),
+        }
+    )
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": "Successfully marked attendance",
+        }
+    )
+
+
+def get_attendance(request, jsonify, FIREBASE):
+    data = request.get_json()
+    admin_email = data["admin_email"]
+    date = data["date"]
+    hour = date.split("/")[-1]
+    if hour == date:
+        hour = None
+
+    admin_email = admin_email.replace("@", "_AT").replace(".", "_")
+
+    print(date, hour, admin_email)
+    firebaseConfig = {
+        "apiKey": FIREBASE["apiKey"],
+        "authDomain": FIREBASE["authDomain"],
+        "projectId": FIREBASE["projectId"],
+        "storageBucket": FIREBASE["storageBucket"],
+        "messagingSenderId": FIREBASE["messagingSenderId"],
+        "appId": FIREBASE["appId"],
+        "databaseURL": FIREBASE["databaseURL"],
+    }
+
+    firebase = pyrebase.initialize_app(firebaseConfig)
+    db = firebase.database()
+
+    admin_data = db.child("attendyAccount").child(admin_email).get().val()
+    if admin_data == None:
+        return jsonify({"status": "failed", "message": "Admin does not exist"})
+
+    if date == "all":
+        return_data = db.child(f"attendances").get().val()
+    else:
+        if db.child(f"attendances/{date}").get().val() == None:
+            return jsonify(
+                {
+                    "status": "failed",
+                    "message": "Attendance does not exist for this date",
+                }
+            )
+        if hour == None:
+            return_data = db.child(f"attendances").child(date).get().val()
+        else:
+            return_data = (
+                db.child(f"attendances")
+                .child(date)
+                .child(admin_email)
+                .get()
+                .val()
+            )
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": "Successfully fetched attendance",
+            "data": return_data,
+        }
+    )
